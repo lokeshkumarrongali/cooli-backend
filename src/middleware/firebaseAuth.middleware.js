@@ -24,7 +24,8 @@ const verifyFirebaseToken = async (req, res, next) => {
       req.user = decodedToken;
       next();
     } catch (error) {
-      throw new AppError('Invalid or expired token', STATUS_CODES.UNAUTHORIZED);
+      console.error('Firebase token verification failed:', error.message);
+      throw new AppError(`Invalid or expired token: ${error.message}`, STATUS_CODES.UNAUTHORIZED);
     }
   } catch (error) {
     next(error);
