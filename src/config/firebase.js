@@ -1,14 +1,12 @@
 const admin = require("firebase-admin");
-const serviceAccount = require("./serviceAccount.json");
 
-// Robust handling of the private key newline characters
-if (serviceAccount.private_key && typeof serviceAccount.private_key === 'string') {
-  // Replace literal '\n' (the two-character sequence) with a real newline
-  serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
-  
-  // Also ensure no other weird escaped characters from copy-pasting
-  // If it's already a real newline, this won't hurt.
-}
+const serviceAccount = {
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+  privateKey: process.env.FIREBASE_PRIVATE_KEY
+    ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n")
+    : undefined,
+};
 
 if (!admin.apps.length) {
   try {
