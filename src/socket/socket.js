@@ -9,7 +9,7 @@ module.exports = {
       cors: {
         origin: [
           "http://localhost:5173",
-          "https://cooli.vercel.app"
+          "https://cooli-frontends.vercel.app"
         ],
         methods: ["GET", "POST"]
       }

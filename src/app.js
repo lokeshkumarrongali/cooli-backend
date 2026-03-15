@@ -10,13 +10,17 @@ const app = express();
 app.use('/uploads', express.static(path.join(__dirname, '..', 'public', 'uploads')));
 
 // Middlewares
-app.use(cors({
-  origin: [
-    "http://localhost:5173",
-    "https://cooli.vercel.app"
-  ],
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://cooli-frontends.vercel.app"
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true
+  })
+);
+app.options("*", cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
