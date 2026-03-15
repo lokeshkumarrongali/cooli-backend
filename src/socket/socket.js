@@ -7,10 +7,13 @@ module.exports = {
   init: (server) => {
     io = new Server(server, {
       cors: {
-        origin: [
-          "http://localhost:5173",
-          "https://cooli-frontends.vercel.app"
-        ],
+        origin: function (origin, callback) {
+          if (!origin || /vercel\.app$/.test(origin) || origin === "http://localhost:5173") {
+            callback(null, true);
+          } else {
+            callback(new Error('Not allowed by CORS'));
+          }
+        },
         methods: ["GET", "POST"]
       }
     });
