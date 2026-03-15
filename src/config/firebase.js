@@ -10,15 +10,15 @@ const serviceAccount = {
   privateKey: process.env.FIREBASE_PRIVATE_KEY,
 };
 
+if (!serviceAccount.projectId || !serviceAccount.clientEmail || !serviceAccount.privateKey) {
+  throw new Error("Missing Firebase environment variables");
+}
+
 if (!admin.apps.length) {
-  try {
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-    });
-    console.log("Firebase Admin SDK initialized successfully.");
-  } catch (error) {
-    console.error("Firebase Admin SDK initialization failed:", error.message);
-  }
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+  console.log("Firebase Admin SDK initialized successfully.");
 }
 
 module.exports = admin;
