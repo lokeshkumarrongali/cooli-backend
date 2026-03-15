@@ -20,6 +20,18 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Health routes
+app.get("/", (req, res) => {
+  res.send("Cooli Backend API Running 🚀");
+});
+
+app.get("/api", (req, res) => {
+  res.json({
+    status: "API working",
+    service: "Cooli Backend"
+  });
+});
+
 // Routes
 app.use('/api/v1', routes);
 
