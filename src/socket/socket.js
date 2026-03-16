@@ -1,4 +1,5 @@
 const { Server } = require("socket.io");
+const admin = require('../config/firebase');
 
 let io;
 const users = new Map(); // Maps userId -> socketId
@@ -12,6 +13,22 @@ module.exports = {
           "https://cooli-frontends.vercel.app"
         ],
         methods: ["GET", "POST"]
+      }
+    });
+
+    // Auth Middleware for Socket.io
+    io.use(async (socket, next) => {
+      try {
+        const token = socket.handshake.auth.token;
+        if (!token) {
+          return next(new Error("Authentication error: No token provided"));
+        }
+        const decodedToken = await admin.auth().verifyIdToken(token);
+        socket.user = decodedToken;
+        next();
+      } catch (error) {
+        console.error("Socket auth failed:", error.message);
+        next(new Error("Authentication error: Invalid token"));
       }
     });
 
