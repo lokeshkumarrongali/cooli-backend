@@ -16,6 +16,8 @@ module.exports = {
   ROLES: {
     USER: 'user',
     ADMIN: 'admin',
+    WORKER: 'worker',
+    EMPLOYER: 'employer'
   },
   PROVIDERS: {
     LOCAL: 'local',
