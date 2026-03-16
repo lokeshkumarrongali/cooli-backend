@@ -4,15 +4,19 @@ const AppError = require('../utils/AppError');
 
 exports.uploadMedia = async (req, res, next) => {
   try {
+    console.log('Upload request received. File:', req.file ? req.file.originalname : 'No file');
+    
     if (!req.file) {
       return next(new AppError('No file uploaded', STATUS_CODES.BAD_REQUEST));
     }
     
-    // Return full Cloudinary URL for the frontend
-    const imageUrl = req.file.path;
+    // In some versions, it's path, in others secure_url
+    const imageUrl = req.file.path || req.file.secure_url;
+    console.log('Successfully uploaded to Cloudinary:', imageUrl);
     
     sendResponse(res, STATUS_CODES.SUCCESS, 'File uploaded successfully', { imageUrl });
   } catch (error) {
-    next(new AppError('File upload failed', STATUS_CODES.INTERNAL_SERVER_ERROR));
+    console.error('CRITICAL: Cloudinary Upload Error:', error);
+    next(new AppError(`File upload failed: ${error.message}`, STATUS_CODES.INTERNAL_SERVER_ERROR));
   }
 };
