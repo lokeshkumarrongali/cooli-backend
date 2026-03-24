@@ -57,16 +57,21 @@ const frontendPath = path.resolve(__dirname, '../../frontend/dist');
 app.use(express.static(frontendPath));
 
 // The catch-all handler: for any request that doesn't 
-// match one above, send back React's index.html file.
+// match one of the API or static routes above, send back React's index.html file.
 app.get("*", (req, res, next) => {
-  // Prevent API routes from being handled by the frontend fallback
+  // If request is to an API route but wasn't handled, return JSON 404
   if (req.originalUrl.startsWith("/api")) {
-    return next();
+    return res.status(404).json({
+      success: false,
+      message: "API route not found"
+    });
   }
   
+  // Otherwise, serve the React app
   const indexPath = path.join(frontendPath, 'index.html');
   res.sendFile(indexPath);
 });
+
 
 // 6. Global Error Handler
 app.use(errorHandler);
