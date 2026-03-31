@@ -51,25 +51,12 @@ app.get("/api", (req, res) => {
 // Main routes under /api/v1
 app.use('/api/v1', routes);
 
-// 5. Frontend Fallback (VERY END of the file, but before error handler)
-// Serve static files from the React app
-const frontendPath = path.resolve(__dirname, '../../frontend/dist');
-app.use(express.static(frontendPath));
-
-// The catch-all handler: for any request that doesn't 
-// match one of the API or static routes above, send back React's index.html file.
-app.get("*", (req, res, next) => {
-  // If request is to an API route but wasn't handled, return JSON 404
-  if (req.originalUrl.startsWith("/api")) {
-    return res.status(404).json({
-      success: false,
-      message: "API route not found"
-    });
-  }
-  
-  // Otherwise, serve the React app
-  const indexPath = path.join(frontendPath, 'index.html');
-  res.sendFile(indexPath);
+// 5. Frontend Fallback (REMOVED: Frontend is hosted on Vercel)
+app.all("*", (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `API Route ${req.originalUrl} not found on this server`
+  });
 });
 
 
