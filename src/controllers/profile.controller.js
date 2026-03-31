@@ -98,3 +98,25 @@ exports.updateProfile = async (req, res, next) => {
     next(new AppError('Profile update failed', STATUS_CODES.INTERNAL_SERVER_ERROR));
   }
 };
+exports.updateProfilePhoto = async (req, res, next) => {
+  try {
+    const { imageUrl } = req.body;
+    if (!imageUrl) {
+      return next(new AppError('Missing imageUrl', STATUS_CODES.BAD_REQUEST));
+    }
+    const updatedUser = await User.findOneAndUpdate(
+      { providerId: req.user.uid },
+      { 'sharedProfile.photo': imageUrl },
+      { new: true, runValidators: true }
+    );
+    if (!updatedUser) {
+      return next(new AppError('User not found', STATUS_CODES.NOT_FOUND));
+    }
+    sendResponse(res, STATUS_CODES.SUCCESS, 'Profile photo updated', {
+      profilePhoto: updatedUser.sharedProfile.photo,
+    });
+  } catch (error) {
+    next(new AppError('Failed to update profile photo', STATUS_CODES.INTERNAL_SERVER_ERROR));
+  }
+};
+

@@ -8,4 +8,4 @@ router.use(verifyFirebaseToken);
 router.get('/', getProfile);
 router.put('/', updateProfile);
 
-module.exports = router;
+router.patch('/photo', require('../controllers/profile.controller').updateProfilePhoto);
