@@ -9,3 +9,4 @@ router.get('/', getProfile);
 router.put('/', updateProfile);
 
 router.patch('/photo', require('../controllers/profile.controller').updateProfilePhoto);
+module.exports = router;
