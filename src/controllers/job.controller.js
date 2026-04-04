@@ -420,3 +420,20 @@ exports.searchJobs = async (req, res, next) => {
     next(new AppError('Failed to search jobs', STATUS_CODES.INTERNAL_SERVER_ERROR));
   }
 };
+
+const matchingService = require('../services/matching.service');
+
+// Get recommended jobs for a worker
+exports.getRecommendedJobs = async (req, res, next) => {
+  try {
+    const { workerId } = req.params;
+    const jobs = await matchingService.getRecommendedJobs(workerId);
+
+    sendResponse(res, STATUS_CODES.SUCCESS, 'Recommended jobs fetched successfully', {
+      jobs
+    });
+  } catch (error) {
+    console.error("Recommended Jobs Error", error);
+    next(error);
+  }
+};

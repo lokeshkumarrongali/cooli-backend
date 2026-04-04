@@ -12,6 +12,7 @@ router.use(verifyFirebaseToken);
 router.post('/', jobController.createJob);
 router.get('/employer', jobController.getEmployerJobs); // Must come before /:id to prevent route shadowing
 router.get('/worker-history', jobController.getWorkerJobHistory); // Must come before /:id
+router.get('/recommended/:workerId', jobController.getRecommendedJobs); // Must come before /:id
 router.get('/nearby', jobController.getNearbyJobs);
 router.get('/search', jobController.searchJobs);
 router.get('/:id', jobController.getJobDetails);

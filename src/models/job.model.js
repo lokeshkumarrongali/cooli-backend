@@ -63,6 +63,6 @@ const jobSchema = new mongoose.Schema({
   }
 });
 
-jobSchema.index({ location: "2dsphere" });
+jobSchema.index({ location: "2dsphere", status: 1 });
 
 module.exports = mongoose.model("Job", jobSchema);

@@ -8,12 +8,13 @@ const { STATUS_CODES } = require('../utils/constants');
 const verifyFirebaseToken = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
-
+    console.log('Firebase middleware - Authorization header:', authHeader);
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.warn('Missing or malformed Authorization header');
       throw new AppError('No token provided or invalid format', STATUS_CODES.UNAUTHORIZED);
     }
-
     const idToken = authHeader.split('Bearer ')[1];
+    console.log('Extracted idToken length:', idToken ? idToken.length : 'none');
 
     if (!idToken) {
       throw new AppError('Token missing from header', STATUS_CODES.UNAUTHORIZED);
