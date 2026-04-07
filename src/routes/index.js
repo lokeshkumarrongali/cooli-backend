@@ -42,6 +42,10 @@ router.use('/workers', workerRoutes);
 const savedJobRoutes = require('./savedJob.routes');
 router.use('/', savedJobRoutes);
 
+// AI Feature Routes
+const aiRoutes = require('./ai.routes');
+router.use('/ai', aiRoutes);
+
 // Chat/Message Routes
 const messageRoutes = require('./message.routes');
 router.use('/chat', messageRoutes);

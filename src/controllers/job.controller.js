@@ -4,6 +4,7 @@ const { sendResponse } = require('../utils/response');
 const { STATUS_CODES } = require('../utils/constants');
 const AppError = require('../utils/AppError');
 const notificationService = require('../services/notification.service');
+const matchingService = require('../services/matching.service');
 
 // Create a new job
 exports.createJob = async (req, res, next) => {
@@ -353,7 +354,46 @@ exports.getNearbyJobs = async (req, res, next) => {
       }
     }
 
-    sendResponse(res, STATUS_CODES.SUCCESS, 'Nearby jobs fetched successfully', jobs);
+    // Capture worker for scoring
+    let worker = null;
+    if (req.user) {
+      worker = await User.findOne({ providerId: req.user.uid }).lean();
+    }
+
+    const scoredJobs = jobs.map(job => {
+      const jobObj = job.toObject();
+      let score = 0;
+      let dist = null;
+
+      if (lat && lng && jobObj.location?.coordinates) {
+        const [lng1, lat1] = [parseFloat(lng), parseFloat(lat)];
+        const [lng2, lat2] = jobObj.location.coordinates;
+        const R = 6371e3; 
+        const phi1 = lat1 * Math.PI/180;
+        const phi2 = lat2 * Math.PI/180;
+        const dPhi = (lat2 - lat1) * Math.PI/180;
+        const dLambda = (lng2 - lng1) * Math.PI/180;
+        const a = Math.sin(dPhi/2) * Math.sin(dPhi/2) +
+                  Math.cos(phi1) * Math.cos(phi2) *
+                  Math.sin(dLambda/2) * Math.sin(dLambda/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        dist = R * c;
+      }
+
+      if (worker && worker.role === 'worker') {
+        const scoreVal = matchingService.scoreJob(jobObj, worker, [parseFloat(lng), parseFloat(lat)]);
+        const skillScore = matchingService.computeSkillScore(worker.workerProfile?.skills || [], jobObj.requiredSkills);
+        return { 
+          ...jobObj, 
+          score: scoreVal, 
+          skillMatch: skillScore, 
+          distance: dist 
+        };
+      }
+      return { ...jobObj, distance: dist };
+    });
+
+    sendResponse(res, STATUS_CODES.SUCCESS, 'Nearby jobs fetched successfully', scoredJobs);
   } catch (error) {
     console.error("Geospatial Query Error", error);
     next(new AppError('Failed to fetch nearby jobs', STATUS_CODES.INTERNAL_SERVER_ERROR));
@@ -409,31 +449,84 @@ exports.searchJobs = async (req, res, next) => {
       };
     }
 
+    // Capture worker for scoring
+    let worker = null;
+    if (req.user) {
+       worker = await User.findOne({ providerId: req.user.uid }).lean();
+    }
+
     const jobs = await Job.find(query)
       .populate('employerId', 'sharedProfile employerProfile')
       .sort({ createdAt: -1 })
       .limit(50);
 
-    sendResponse(res, STATUS_CODES.SUCCESS, 'Jobs searched successfully', jobs);
+    // Dynamic scoring if worker exists
+    const scoredJobs = jobs.map(job => {
+      const jobObj = job.toObject();
+      let score = 0;
+      let dist = null;
+
+      if (lat && lng && jobObj.location?.coordinates) {
+        const [lng1, lat1] = [parseFloat(lng), parseFloat(lat)];
+        const [lng2, lat2] = jobObj.location.coordinates;
+        const R = 6371e3; 
+        const phi1 = lat1 * Math.PI/180;
+        const phi2 = lat2 * Math.PI/180;
+        const dPhi = (lat2 - lat1) * Math.PI/180;
+        const dLambda = (lng2 - lng1) * Math.PI/180;
+        const a = Math.sin(dPhi/2) * Math.sin(dPhi/2) +
+                  Math.cos(phi1) * Math.cos(phi2) *
+                  Math.sin(dLambda/2) * Math.sin(dLambda/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        dist = R * c;
+      }
+
+      if (worker && worker.role === 'worker') {
+         score = matchingService.scoreJob(jobObj, worker, lat && lng ? [parseFloat(lng), parseFloat(lat)] : null);
+         const skillScore = matchingService.computeSkillScore(worker.workerProfile?.skills || [], jobObj.requiredSkills);
+         return {
+           ...jobObj,
+           score,
+           skillMatch: skillScore,
+           distance: dist
+         };
+      }
+      return { ...jobObj, distance: dist };
+    });
+
+    // Sort by score if available, otherwise by distance if available, otherwise by date
+    scoredJobs.sort((a, b) => {
+      if (a.score !== undefined && b.score !== undefined) {
+        return b.score - a.score;
+      }
+      if (a.distance !== undefined && b.distance !== undefined) {
+        return a.distance - b.distance;
+      }
+      return 0;
+    });
+
+    sendResponse(res, STATUS_CODES.SUCCESS, 'Jobs searched successfully', scoredJobs);
   } catch (error) {
-    console.error("Search Query Error", error);
+    console.error("Search Query Error:", error); // Enhanced logging
     next(new AppError('Failed to search jobs', STATUS_CODES.INTERNAL_SERVER_ERROR));
   }
 };
 
-const matchingService = require('../services/matching.service');
 
 // Get recommended jobs for a worker
 exports.getRecommendedJobs = async (req, res, next) => {
   try {
     const { workerId } = req.params;
-    const jobs = await matchingService.getRecommendedJobs(workerId);
+    const { lat, lng } = req.query;
+    const jobs = await matchingService.getRecommendedJobs(workerId, lat, lng);
 
-    sendResponse(res, STATUS_CODES.SUCCESS, 'Recommended jobs fetched successfully', {
-      jobs
-    });
+    sendResponse(res, STATUS_CODES.SUCCESS, 'Recommended jobs fetched successfully', jobs);
   } catch (error) {
-    console.error("Recommended Jobs Error", error);
-    next(error);
+    console.error('RECOMMEND ERROR:', error);
+    res.status(500).json({
+      success: false,
+      message: `Backend logic failed: ${error.message}`,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 };
